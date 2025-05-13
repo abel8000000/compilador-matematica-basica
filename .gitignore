@@ -1,0 +1,21 @@
+# Archivos de configuración de CMake
+/build/
+/cmake-build-*/
+
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Archivos de objetos, binarios y otros
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Editores de texto
+.vscode/
+*.swp
+*.swo
