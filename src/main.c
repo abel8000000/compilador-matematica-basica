@@ -1,60 +1,82 @@
-// Librerias estandar
+// Main: Driver para el compilador de aritmética simple
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include "parser.h"
+#include "evaluator.h"
+#include "codegen.h"
+#include "ast.h"
 
-// Headers del proyecto
-#include "tokenizer.h"
-#include "mathParser.h"
+// Constantes
+#define LINE_MAX 256
+#define IO_DIR "i-o"
+#define INPUT_FILE IO_DIR "/input.txt"
+#define OUTPUT_FILE IO_DIR "/output.txt"
 
-int main(int argCount, char *argVector[])
+int main(void)
 {
-    char input[256]; // Array de caracteres para almacenar la entrada
+    // Manejo de archivos de entrada y salida
+    FILE *fin = fopen(INPUT_FILE, "r");
+    FILE *fout = fopen(OUTPUT_FILE, "w");
+    char line[LINE_MAX];
 
-    if (argCount > 1)
-    {                                          // Si se pasa un argumento, se asume que es el nombre de un archivo
-        FILE *file = fopen(argVector[1], "r"); // Se abre el archivo en modo lectura
-        if (!file)
-        { // Verifica si el archivo se abre correctamente
-            perror("Error al abrir el archivo");
-            return EXIT_FAILURE;
-        }
-        if (!fgets(input, sizeof(input), file))
-        { // Verifica si se lee correctamente la cadena
-            fprintf(stderr, "Error al leer el archivo\n");
-            fclose(file);
-            return EXIT_FAILURE;
-        }
-        fclose(file); // Se cierra el archivo
-    }
-    else
-    { // Si no se pasa un argumento, se pide al usuario que ingrese una expresión
-        printf("Ingrese una expresión matemática: ");
-        fgets(input, sizeof(input), stdin);
-    }
-
-    // Se elimina el salto de línea al final de la cadena
-    size_t len = strlen(input);
-    if (len > 0 && input[len - 1] == '\n')
+    if (!fin)
     {
-        input[len - 1] = '\0';
+        perror("Error al abrir el archivo de entrada");
+        return EXIT_FAILURE;
+    }
+    if (!fout)
+    {
+        perror("Error al abrir el archivo de salida");
+        fclose(fin);
+        return EXIT_FAILURE;
     }
 
-    // Se guarda el array de tokens que devuelve la funcion tokenize
-    Token *tokens = tokenize(input);
+    // Procesar cada línea del archivo de entrada
+    while (fgets(line, sizeof(line), fin))
+    {
+        // Borra el salto de línea al final de la cadena
+        size_t len = strlen(line);
+        if (len > 0 && line[len - 1] == '\n')
+        {
+            line[len - 1] = '\0';
+        }
 
-    int result;
-    // parse procesa el array de tokens y devuelve el resultado
-    if (parse(tokens, &result))
-    { // Si la expresión es válida, se imprime el resultado
-        printf("Resultado: %d\n", result);
-    }
-    else
-    { // Si la expresión no es válida, se imprime un mensaje de error
-        printf("Expresion invalida\n");
+        // Recortar espacios en blanco
+        char *start = line;
+        while (*start && isspace((unsigned char)*start))
+        {
+            start++;
+        }
+
+        // Se ignoran las líneas vacías
+        if (line[0] == '\0')
+            continue;
+
+        // Se hace el analisis sintáctico y se construye el AST
+        Node *root = parse(line);
+        if (!root)
+        {
+            fprintf(stderr, "Parsing falló en la linea: %s\n", line);
+            continue;
+        }
+
+        // Evaluar el AST
+        int result = evaluate_ast(root);
+        fprintf(fout, "; %s\n", line);
+        fprintf(fout, "Resultado = %d\n\n", result);
+
+        // Se genera el código ensamblador
+        fprintf(fout, "; %s\n", line);
+        generate_code(root, fout);
+        fprintf(fout, "; fin de la expresión\n\n");
+
+        // Limpiar el AST
+        free_ast(root);
     }
 
-    // Se libera la memoria asignada para los tokens, se termina el programa
-    free(tokens);
-    return 0;
+    fclose(fin);
+    fclose(fout);
+    return EXIT_SUCCESS;
 }
