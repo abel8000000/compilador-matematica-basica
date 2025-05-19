@@ -25,7 +25,7 @@ Clona el repositorio y construyelo usando Make
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/yourusername/compilador-matematica-basica.git
+git clone https://github.com/abel8000000/compilador-matematica-basica.git
 cd compilador-matematica-basica
 
 # Construir el proyecto
