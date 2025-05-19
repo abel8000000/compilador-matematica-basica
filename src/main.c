@@ -50,8 +50,8 @@ int main(void)
             start++;
         }
 
-        // Se ignoran las líneas vacías
-        if (line[0] == '\0')
+        // Se ignoran las líneas vacías o comentarios
+        if (line[0] == '\0' || line[0] == '#')
             continue;
 
         // Se hace el analisis sintáctico y se construye el AST
